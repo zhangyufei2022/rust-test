@@ -1,3 +1,5 @@
+mod weak_and_circle_reference;
+
 fn main() {
     println!("Hello, world!");
 
