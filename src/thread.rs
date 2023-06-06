@@ -3,8 +3,9 @@ mod tests {
 
     use std::cell::Cell;
     use std::sync::mpsc::{Receiver, Sender};
-    use std::sync::{mpsc, Arc, Barrier, Condvar, Mutex};
+    use std::sync::{mpsc, Arc, Barrier, Condvar, Mutex, RwLock};
     use std::thread;
+    use std::time::Duration;
     use thread_local::ThreadLocal;
 
     // 以下代码会导致cpu 100%，因为线程B中的循环无法结束
@@ -96,6 +97,50 @@ mod tests {
         assert_eq!(*start, true);
     }
 
+    #[derive(Clone, Copy, Debug)]
+    enum Next {
+        Child,
+        Main,
+    }
+
+    #[test]
+    fn test_condvar2() {
+        let next = Arc::new(Mutex::new(Next::Main));
+        let cond = Arc::new(Condvar::new());
+
+        let next2 = next.clone();
+        let cond2 = cond.clone();
+
+        let handle = thread::spawn(move || {
+            // let lock = next2.lock().unwrap();
+            let mut next_flag = *(next2.lock().unwrap());
+            // drop(lock);
+
+            for i in 1..=3 {
+                while let Next::Main = next_flag {
+                    next_flag = *cond2.wait(next2.lock().unwrap()).unwrap();
+                } // next_flag 为 Next::Child 时跳出 while-loop
+
+                println!("child:\t{}", i);
+                next_flag = Next::Main;
+                *next2.lock().unwrap() = next_flag; // 下一个进行打印的是main线程
+            }
+        });
+
+        for i in 1..=3 {
+            println!("main:\t{}", i);
+
+            let mut next_flag = next.lock().unwrap();
+            *next_flag = Next::Child; // 下一个进行打印的是child线程
+            drop(next_flag);
+
+            cond.notify_one();
+            // 睡一秒, 给child线程提供上锁的机会.
+            thread::sleep(Duration::from_secs(1));
+        }
+        handle.join().unwrap();
+    }
+
     #[test]
     fn test_msg_pass() {
         // 同步通道，缓存消息数目为1
@@ -124,6 +169,7 @@ mod tests {
         Int(i32),
         String(String),
     }
+
     #[test]
     fn test_msg_pass_multi_type() {
         let (tx, rx): (Sender<DataType>, Receiver<DataType>) = mpsc::channel();
@@ -154,5 +200,31 @@ mod tests {
         }
 
         assert_eq!(*counter.lock().unwrap(), THREAD_COUNT);
+    }
+
+    #[test]
+    fn test_rwlock() {
+        let rwlock = RwLock::new(1);
+
+        {
+            // 同一时间多个读
+            let r1 = rwlock.read().unwrap();
+            assert_eq!(*r1, 1);
+            let r2 = rwlock.read().unwrap();
+            assert_eq!(*r2, 1);
+        }
+
+        {
+            let mut w = rwlock.write().unwrap();
+            *w += 1;
+            assert_eq!(*w, 2);
+
+            // 读和写不能同时存在，上面的写锁还没有释放，因此不能开始读取
+            // let r = rwlock.read();
+            // println!("{:?}", r);
+        } // 写锁在此drop
+
+        let r = rwlock.read().unwrap();
+        assert_eq!(*r, 2);
     }
 }
