@@ -2,4 +2,4 @@
 
 参考：
 Rust语言圣经(Rust Course)
-https://course.rs/first-try/hello-world.html
+https://course.rs/about-book.html
