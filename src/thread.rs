@@ -1,12 +1,14 @@
 #[cfg(test)]
 mod tests {
 
+    use chrono::Utc;
     use std::cell::Cell;
     use std::sync::mpsc::{Receiver, Sender};
     use std::sync::{mpsc, Arc, Barrier, Condvar, Mutex, RwLock};
     use std::thread;
-    use std::time::Duration;
+    use std::time::{Duration, SystemTime};
     use thread_local::ThreadLocal;
+    use tokio::sync::{Semaphore, TryAcquireError};
 
     // 以下代码会导致cpu 100%，因为线程B中的循环无法结束
     // #[test]
@@ -112,9 +114,7 @@ mod tests {
         let cond2 = cond.clone();
 
         let handle = thread::spawn(move || {
-            // let lock = next2.lock().unwrap();
             let mut next_flag = *(next2.lock().unwrap());
-            // drop(lock);
 
             for i in 1..=3 {
                 while let Next::Main = next_flag {
@@ -226,5 +226,46 @@ mod tests {
 
         let r = rwlock.read().unwrap();
         assert_eq!(*r, 2);
+    }
+
+    #[tokio::test]
+    async fn test_semaphore() {
+        let semaphore = Arc::new(Semaphore::new(3));
+        let mut handles = Vec::new();
+
+        for i in 0..5 {
+            let permit = semaphore.clone().acquire_owned().await.unwrap();
+            handles.push(tokio::spawn(async move {
+                println!("thread i:{}, time:{}", i, Utc::now());
+                thread::sleep(Duration::from_millis(10));
+                drop(permit);
+                println!("thread i:{}, time:{}", i, Utc::now());
+            }));
+        }
+
+        for handle in handles {
+            handle.await.unwrap();
+        }
+
+        let semaphore = Arc::new(Semaphore::new(2));
+
+        let permit_1 = semaphore.clone().try_acquire_owned();
+        assert_eq!(semaphore.available_permits(), 1);
+        assert!(permit_1.is_ok());
+
+        let permit_2 = semaphore.clone().try_acquire_owned();
+        assert_eq!(semaphore.available_permits(), 0);
+        assert!(permit_2.is_ok());
+
+        let permit_3 = semaphore.clone().try_acquire_owned();
+        assert_eq!(permit_3.err(), Some(TryAcquireError::NoPermits));
+
+        drop(permit_1);
+        drop(permit_2);
+        let permit_4 = semaphore.clone().try_acquire_many_owned(2);
+        assert_eq!(permit_4.err(), None);
+
+        semaphore.close();
+        assert_eq!(semaphore.try_acquire().err(), Some(TryAcquireError::Closed));
     }
 }
