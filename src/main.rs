@@ -1,3 +1,4 @@
+mod async_await;
 mod self_reference;
 mod thread;
 mod weak_and_circle_reference;

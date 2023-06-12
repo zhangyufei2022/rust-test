@@ -9,3 +9,4 @@ edition = "2021"
 thread_local = "1.1"
 tokio = { version = "1.28.2", features = ["full"] }
 chrono = "0.4"
+futures = "0.3"

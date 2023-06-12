@@ -6,7 +6,7 @@ mod tests {
     use std::sync::mpsc::{Receiver, Sender};
     use std::sync::{mpsc, Arc, Barrier, Condvar, Mutex, RwLock};
     use std::thread;
-    use std::time::{Duration, SystemTime};
+    use std::time::Duration;
     use thread_local::ThreadLocal;
     use tokio::sync::{Semaphore, TryAcquireError};
 
