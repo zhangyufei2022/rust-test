@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use futures::executor::block_on;
+    use futures::{channel::mpsc, executor::block_on, Future, SinkExt, StreamExt};
 
     async fn hello_world() {
         println!("Hello world");
@@ -72,5 +72,60 @@ mod tests {
     #[tokio::test]
     async fn test_async_await() {
         block_on(async_main());
+    }
+
+    #[tokio::test]
+    // 多个不同的 `async` 语句块可以访问同一个本地变量，只要它们在该变量的作用域内执行
+    async fn test_async_blocks() {
+        let my_string = "foo".to_string();
+
+        let future_one = async {
+            // ...
+            println!("{my_string}");
+        };
+
+        let future_two = async {
+            // ...
+            println!("{my_string}");
+        };
+
+        // 运行两个 Future 直到完成
+        let ((), ()) = futures::join!(future_one, future_two);
+    }
+
+    // 由于 `async move` 会捕获环境中的变量，因此只有一个 `async move` 语句块可以访问该变量，
+    // 但是它也有非常明显的好处： 变量可以转移到返回的 Future 中，不再受借用生命周期的限制
+    fn move_block() -> impl Future<Output = ()> {
+        let my_string = "foo".to_string();
+        async move {
+            // ...
+            println!("{my_string}");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_async_move() {
+        move_block().await;
+    }
+
+    /*
+    关于 Stream 的一个常见例子是消息通道（ futures 包中的）的消费者 Receiver。
+    每次有消息从 Send 端发送后，它都可以接收到一个 Some(val) 值，
+    一旦 Send 端关闭( drop )，且消息通道中没有消息后，它会接收到一个 None 值。
+    */
+    #[tokio::test]
+    async fn test_stream() {
+        const BUFFER_SIZE: usize = 10;
+        let (mut tx, mut rx) = mpsc::channel::<i32>(BUFFER_SIZE);
+
+        tx.send(1).await.unwrap();
+        tx.send(2).await.unwrap();
+        drop(tx);
+
+        // `StreamExt::next` 类似于 `Iterator::next`, 但是前者返回的不是值，而是一个 `Future<Output = Option<T>>`，
+        // 因此还需要使用`.await`来获取具体的值
+        assert_eq!(Some(1), rx.next().await);
+        assert_eq!(Some(2), rx.next().await);
+        assert_eq!(None, rx.next().await);
     }
 }
