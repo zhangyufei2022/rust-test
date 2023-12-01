@@ -1,9 +1,10 @@
 mod async_await;
+mod basic_types;
+mod ownership;
 mod self_reference;
 mod thread;
 mod var;
 mod weak_and_circle_reference;
-mod basic_types;
 
 fn main() {
     println!("Hello, world!");
