@@ -5,6 +5,7 @@ mod self_reference;
 mod thread;
 mod var;
 mod weak_and_circle_reference;
+mod compound_types;
 
 fn main() {
     println!("Hello, world!");
