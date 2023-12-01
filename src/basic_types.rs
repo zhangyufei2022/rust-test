@@ -25,4 +25,47 @@ mod tests {
         );
         assert!((0.1_f64 + 0.2 - 0.3).abs() < 0.000001);
     }
+
+    #[test]
+    fn test_unit_type() {
+        let x: () = ();
+        assert_eq!(x, ret_unit_1());
+        assert_eq!(x, ret_unit_2());
+
+        let v = (2, 3);
+        assert_eq!(v, ret_unit_3());
+
+        // 单元类型，不占内存
+        let unit: () = ();
+        assert_eq!(std::mem::size_of_val(&unit), 0);
+    }
+
+    fn ret_unit_1() {
+        println!("I will return a ()");
+    }
+
+    fn ret_unit_2() -> () {
+        println!("I will return a ()");
+    }
+
+    fn ret_unit_3() -> (i32, i32) {
+        println!("I will return a (2, 3)");
+        (2, 3)
+    }
+
+    #[test]
+    fn test_expression() {
+        let v = {
+            let mut x = 1;
+            x += 2;
+            x
+        };
+        assert_eq!(v, 3);
+
+        let v = {
+            let x = 1;
+            x + 2
+        };
+        assert_eq!(v, 3);
+    }
 }
