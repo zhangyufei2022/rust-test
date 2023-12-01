@@ -48,4 +48,30 @@ mod tests {
         println!("{:?}, {:?}, {:?}", s1, s2, t);
         assert_eq!(t, (String::from("hello"), String::from("world")));
     }
+
+    #[test]
+    fn test_reference() {
+        let mut s = String::from("hello, ");
+        borrow_object(&s); // 不可变引用
+        assert_eq!(s, String::from("hello, "));
+
+        // 可变引用
+        push_str(&mut s);
+        assert_eq!(s, String::from("hello, world"));
+        // 以下写法效果同上
+        let t = &mut s;
+        t.push_str("!");
+        assert_eq!(*t, String::from("hello, world!"));
+
+        let ref t2 = s;
+        assert_eq!(*t2, String::from("hello, world!"));
+
+        // println!("t: {}", t); 这一行写在这里就会报错，因为可变引用t 和 不可变引用t2 在这里同时存在了
+    }
+
+    fn borrow_object(_s: &String) {}
+
+    fn push_str(s: &mut String) {
+        s.push_str("world")
+    }
 }
