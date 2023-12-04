@@ -91,4 +91,61 @@ mod tests {
         let s = unsafe { String::from_raw_parts(ptr, len, capacity) };
         assert_eq!(*story, s);
     }
+
+    #[test]
+    fn test_tuple() {
+        let t: (u8, u16, i64, &str, String) = (1u8, 2u16, 3i64, "hello", String::from(", world"));
+        assert_eq!(t.3, "hello");
+
+        let too_long_tuple = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
+        println!("too long tuple: {:?}", too_long_tuple); // 12以上长度打不出来
+
+        let tup = (1, 6.4, "hello");
+
+        // 结构元组
+        let (x, z, y) = tup;
+        assert_eq!(x, 1);
+        assert_eq!(y, "hello");
+        assert_eq!(z, 6.4);
+    }
+
+    // #[derive(Debug)] 表示使用derive派生实现debug特征，这样才能使用 {:?} 的方式对其进行打印输出
+    #[derive(Debug)]
+    struct File {
+        name: String,
+        data: Vec<u8>,
+    }
+
+    #[test]
+    fn test_struct() {
+        let f1 = File {
+            name: dbg!(String::from("f1.txt")), // dbg!可以在打印信息的同时，返回表达式的值
+            data: Vec::new(),
+        };
+
+        let f1_name = &f1.name;
+        let f1_length = &f1.data.len();
+        println!("{:?}", f1);
+        println!("{} is {} bytes long", f1_name, f1_length);
+
+        let name = "zhangsan".to_string();
+        let data = vec![1, 2, 3];
+        let file1 = build_file(name, data);
+        assert_eq!(file1.data, vec![1, 2, 3]);
+
+        let file2 = File {
+            name: String::from("lisi"),
+            ..file1 // 基于一个架构体实例构造另一个，这里会把file1.data所有权转给file2
+        };
+        assert_eq!(file2.data, vec![1, 2, 3]);
+
+        let File { ref name, ref data } = file2; // 如果不用ref，则是把file2.name的所有权转移给name，后续不能访问file2
+        assert_eq!(*name, file2.name);
+        assert_eq!(*data, file2.data);
+        println!("{:#?}", file2);
+    }
+
+    fn build_file(name: String, data: Vec<u8>) -> File {
+        File { name, data }
+    }
 }
