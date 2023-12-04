@@ -1,6 +1,8 @@
 #[cfg(test)]
 
 mod tests {
+    use core::num;
+
     #[test]
     fn test_string() {
         let mut s = String::from("");
@@ -147,5 +149,62 @@ mod tests {
 
     fn build_file(name: String, data: Vec<u8>) -> File {
         File { name, data }
+    }
+
+    #[derive(Debug)]
+    enum Message {
+        Quit,
+        Move { x: i32, y: i32 },
+        Write(String),
+        ChangeColor(i32, i32, i32),
+    }
+
+    #[test]
+    fn test_enum() {
+        let msg = Message::Move { x: 1, y: 1 };
+        // 枚举成员变量的值可以用模式匹配获取
+        if let Message::Move { x: a, y: b } = msg {
+            assert_eq!(a, b);
+        } else {
+            panic!("不要让这行代码运行！");
+        }
+
+        let msgs: [Message; 3] = [
+            Message::Quit,
+            Message::Write("write sth".to_string()),
+            Message::ChangeColor(255, 255, 0),
+        ];
+        println!("msgs: {:?}", msgs);
+
+        // rust没有null，而是通过枚举Option<T>来处理空值
+        let num = Some(1);
+        let two = plus_one(num);
+        let none = plus_one(None);
+        assert_eq!(two, Some(2));
+        assert_eq!(none, None);
+    }
+
+    fn plus_one(x: Option<isize>) -> Option<isize> {
+        match x {
+            None => None,
+            Some(i) => Some(i + 1),
+        }
+    }
+
+    #[test]
+    fn test_array() {
+        let names = [String::from("Sunfei"), "Sunface".to_string()];
+
+        // get返回的是Option<T>
+        let name0: &String = names.get(0).unwrap();
+        assert_eq!(*name0, String::from("Sunfei"));
+
+        // 直接使用下标访问有越界的风险
+        let name1: &String = &names[1];
+        assert_eq!(*name1, String::from("Sunface"));
+
+        // 数组切片
+        let sub: &[String] = &names[0..1];
+        assert_eq!(*sub, [String::from("Sunfei")])
     }
 }
