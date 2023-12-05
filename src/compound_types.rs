@@ -1,7 +1,6 @@
 #[cfg(test)]
 
 mod tests {
-    use core::num;
 
     #[test]
     fn test_string() {
