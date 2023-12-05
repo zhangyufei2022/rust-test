@@ -88,4 +88,48 @@ mod tests {
         }
         // 为避免变量遮蔽，最好是采用不同的变量名
     }
+
+    #[test]
+    fn test_banding() {
+        let msg = Message::Move { x: 3, y: 2 };
+
+        match msg {
+            Message::Move { x: x @ 3..=7, y } => {
+                println!("Found x in range [3, 7]: {} in a move message", x);
+                assert_eq!(y, 2);
+            }
+            Message::Move {
+                x: newx @ (10 | 11 | 12),
+                ..
+            } => {
+                println!(
+                    "Found x in another range [10, 12] : {} in a move message",
+                    newx
+                );
+            }
+            Message::Move { x, y } => println!("Found one move message x: {}, y: {}", x, y),
+            _ => println!("Found one message which "),
+        }
+
+        let numbers = (2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048);
+        match numbers {
+            // 使用..忽略剩余值，只匹配first和last
+            (first, .., last) => {
+                assert_eq!(first, 2);
+                assert_eq!(last, 2048);
+            }
+        }
+    }
+
+    #[test]
+    fn test_mut_reference() {
+        // 使用模式 &mut V 去匹配一个可变引用时，你需要格外小心，因为匹配出来的 V 是一个值，而不是可变引用
+        let mut s = String::from("hello, ");
+        let r = &mut s;
+
+        match r {
+            value => value.push_str("rust"),
+        }
+        assert_eq!(s, String::from("hello, rust"));
+    }
 }
