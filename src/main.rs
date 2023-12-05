@@ -7,6 +7,7 @@ mod var;
 mod weak_and_circle_reference;
 mod compound_types;
 mod flow_control;
+mod pattern_match;
 
 fn main() {
     println!("Hello, world!");
