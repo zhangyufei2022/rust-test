@@ -6,6 +6,7 @@ mod thread;
 mod var;
 mod weak_and_circle_reference;
 mod compound_types;
+mod flow_control;
 
 fn main() {
     println!("Hello, world!");
