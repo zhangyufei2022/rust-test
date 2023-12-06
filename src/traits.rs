@@ -3,7 +3,7 @@
 mod tests {
     use std::ops::Add;
 
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq)]
     struct Point<T: Add<Output = T>> {
         //特征约束：限制类型T必须实现了Add特征
         x: T,
@@ -27,12 +27,22 @@ mod tests {
         fn summarize(&self) -> String;
     }
 
-    // 为特定类型实现此特征
-    impl Summary for Point<i32> {
+    // 也可以为泛型实现特征，使用特征约束有条件地实现方法或特征
+    impl<T> Summary for Point<T>
+    where
+        T: Add<Output = T> + std::fmt::Display,
+    {
         fn summarize(&self) -> String {
             format!("Point{{x: {}, y: {}}}", self.x, self.y)
         }
     }
+
+    // // 为特定类型实现此特征
+    // impl Summary for Point<i32> {
+    //     fn summarize(&self) -> String {
+    //         format!("Point{{x: {}, y: {}}}", self.x, self.y)
+    //     }
+    // }
 
     // 特征作为函数参数
     fn summarize(p: &impl Summary) -> String {
@@ -66,7 +76,53 @@ mod tests {
     #[test]
     fn test_trait_as_para() {
         let p1 = Point { x: 3, y: 4 };
-        let s = summarize(&p1);
+        let mut s = summarize(&p1);
         assert_eq!(s, String::from("Point{x: 3, y: 4}"));
+
+        let p2 = Point {
+            x: 3.1_f32,
+            y: 4.1_f32,
+        };
+        s = summarize(&p2);
+        println!("{}", s);
+        assert_eq!(s, String::from("Point{x: 3.1, y: 4.1}"));
+    }
+
+    // 函数返回中的 impl Trait
+    fn returns_summarizable() -> impl Summary {
+        Point { x: 1, y: 2 }
+    }
+
+    #[test]
+    fn test_return_impl_trait() {
+        let p = returns_summarizable();
+        assert_eq!(p.summarize(), String::from("Point{x: 1, y: 2}"));
+    }
+
+    // 特征对象
+    trait MyTrait {
+        fn f(&self) -> Box<dyn MyTrait>;
+    }
+
+    impl MyTrait for u32 {
+        fn f(&self) -> Box<dyn MyTrait> {
+            Box::new(42)
+        }
+    }
+
+    impl MyTrait for String {
+        fn f(&self) -> Box<dyn MyTrait> {
+            Box::new(self.clone())
+        }
+    }
+
+    fn my_function(x: Box<dyn MyTrait>) -> Box<dyn MyTrait> {
+        x.f()
+    }
+
+    #[test]
+    fn test_trait_object() {
+        my_function(Box::new(13_u32));
+        my_function(Box::new(String::from("abc")));
     }
 }
