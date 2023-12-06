@@ -1,14 +1,16 @@
 mod async_await;
 mod basic_types;
-mod ownership;
-mod self_reference;
-mod thread;
-mod var;
-mod weak_and_circle_reference;
 mod compound_types;
 mod flow_control;
-mod pattern_match;
+mod generics;
 mod method;
+mod ownership;
+mod pattern_match;
+mod self_reference;
+mod thread;
+mod traits;
+mod var;
+mod weak_and_circle_reference;
 
 fn main() {
     println!("Hello, world!");
