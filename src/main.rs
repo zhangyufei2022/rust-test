@@ -10,6 +10,7 @@ mod self_reference;
 mod thread;
 mod traits;
 mod var;
+mod vec;
 mod weak_and_circle_reference;
 
 fn main() {
