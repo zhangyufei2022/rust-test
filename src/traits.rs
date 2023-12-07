@@ -3,7 +3,7 @@
 mod tests {
     use std::ops::Add;
 
-    #[derive(Debug, Clone, Copy, PartialEq)]
+    #[derive(Debug, PartialEq)]
     struct Point<T: Add<Output = T>> {
         //特征约束：限制类型T必须实现了Add特征
         x: T,
@@ -11,6 +11,8 @@ mod tests {
     }
 
     // 为自定义类型实现Add特征
+    // Add特征定义如下：pub trait Add<Rhs = Self> 使用了默认泛型类型参数，即不指定类型的情况下，使用相同类型进行相加运算
+    // 也可以写为：impl<T: Add<Output = T>> Add<Self> for Point<T> 或 impl<T: Add<Output = T>> Add<Ponit<T>> for Point<T>
     impl<T: Add<Output = T>> Add for Point<T> {
         type Output = Point<T>;
 
@@ -124,5 +126,64 @@ mod tests {
     fn test_trait_object() {
         my_function(Box::new(13_u32));
         my_function(Box::new(String::from("abc")));
+    }
+
+    trait Pilot {
+        fn fly(&self) -> String;
+    }
+
+    trait Wizard {
+        fn fly(&self) -> String;
+    }
+
+    struct Human;
+
+    impl Pilot for Human {
+        fn fly(&self) -> String {
+            String::from("This is your captain speaking.")
+        }
+    }
+
+    impl Wizard for Human {
+        fn fly(&self) -> String {
+            String::from("Up!")
+        }
+    }
+
+    impl Human {
+        fn fly(&self) -> String {
+            String::from("*waving arms furiously*")
+        }
+    }
+
+    #[test]
+    fn test_call_method() {
+        let person = Human;
+        // 特征和类型上的方法同名，优先调用类型上的方法
+        assert_eq!(Pilot::fly(&person), "This is your captain speaking.");
+        assert_eq!(Wizard::fly(&person), "Up!");
+
+        assert_eq!(person.fly(), "*waving arms furiously*");
+
+        println!("Success!")
+    }
+
+    // 手动实现Copy特征，因为Copy特征依赖Clone特征，因此也必须实现Clone
+    // Copy特征定义如下：pub trait Copy: Clone
+    impl<T: Copy + Add<Output = T>> Copy for Point<T> {}
+    impl<T: Clone + Add<Output = T>> Clone for Point<T> {
+        fn clone(&self) -> Self {
+            Self {
+                x: self.x.clone(),
+                y: self.y.clone(),
+            }
+        }
+    }
+
+    #[test]
+    fn test_supertrait() {
+        let p1 = Point { x: 1i32, y: 1i32 };
+        let p2 = p1.clone();
+        assert_eq!(p1, p2);
     }
 }
