@@ -3,6 +3,7 @@ mod basic_types;
 mod compound_types;
 mod flow_control;
 mod generics;
+mod hashmap;
 mod method;
 mod ownership;
 mod pattern_match;
