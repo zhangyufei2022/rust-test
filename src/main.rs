@@ -8,6 +8,7 @@ mod lifetime;
 mod method;
 mod ownership;
 mod pattern_match;
+mod result_panic;
 mod self_reference;
 mod thread;
 mod traits;
