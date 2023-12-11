@@ -8,6 +8,7 @@ pub mod hashmap;
 pub mod leetcode;
 pub mod lifetime;
 pub mod method;
+pub mod minigrep;
 pub mod ownership;
 pub mod pattern_match;
 pub mod result_panic;
