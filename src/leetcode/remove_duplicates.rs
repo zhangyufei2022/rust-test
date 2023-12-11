@@ -1,20 +1,19 @@
-/// 删除排序数组中的重复项
-pub fn remove_duplicates(nums: &mut Vec<i32>) -> usize {
-    let mut i: usize = 0;
-
-    for j in 1..nums.len() {
-        if nums[i] != nums[j] {
-            i += 1;
-            nums[i] = nums[j];
-        }
-    }
-
-    i + 1
-}
-
 #[cfg(test)]
+
 mod tests {
-    use super::remove_duplicates;
+    /// 删除排序数组中的重复项
+    pub fn remove_duplicates(nums: &mut Vec<i32>) -> usize {
+        let mut i: usize = 0;
+
+        for j in 1..nums.len() {
+            if nums[i] != nums[j] {
+                i += 1;
+                nums[i] = nums[j];
+            }
+        }
+
+        i + 1
+    }
 
     #[test]
     fn test() {

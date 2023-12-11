@@ -1,21 +1,3 @@
-mod async_await;
-mod basic_types;
-mod compound_types;
-mod flow_control;
-mod generics;
-mod hashmap;
-mod lifetime;
-mod method;
-mod ownership;
-mod pattern_match;
-mod result_panic;
-mod self_reference;
-mod thread;
-mod traits;
-mod var;
-mod vec;
-mod weak_and_circle_reference;
-
 fn main() {
     println!("Hello, world!");
 

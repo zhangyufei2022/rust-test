@@ -1,35 +1,31 @@
-use crate::weak_and_circle_reference::List::{Cons, Nil};
-use std::cell::RefCell;
-use std::rc::{Rc, Weak};
-
-#[derive(Debug)]
-enum List {
-    Cons(i32, RefCell<Weak<List>>),
-    Nil,
-}
-
-impl List {
-    fn tail(&self) -> Option<&RefCell<Weak<List>>> {
-        match self {
-            Cons(_, p) => Some(p),
-            Nil => None,
-        }
-    }
-}
-
-// tree 数据结构
-#[derive(Debug)]
-struct Node {
-    value: i32,
-    parent: RefCell<Weak<Node>>,      // 子节点通过 Weak 来引用父节点
-    children: RefCell<Vec<Rc<Node>>>, // 父节点通过 Rc 来引用子节点
-}
-
 #[cfg(test)]
 mod tests {
-    use std::rc::Weak;
+    use std::cell::RefCell;
+    use std::rc::{Rc, Weak};
+    use List::{Cons, Nil};
 
-    use super::*;
+    #[derive(Debug)]
+    enum List {
+        Cons(i32, RefCell<Weak<List>>),
+        Nil,
+    }
+
+    impl List {
+        fn tail(&self) -> Option<&RefCell<Weak<List>>> {
+            match self {
+                Cons(_, p) => Some(p),
+                Nil => None,
+            }
+        }
+    }
+
+    // tree 数据结构
+    #[derive(Debug)]
+    struct Node {
+        value: i32,
+        parent: RefCell<Weak<Node>>,      // 子节点通过 Weak 来引用父节点
+        children: RefCell<Vec<Rc<Node>>>, // 父节点通过 Rc 来引用子节点
+    }
 
     // enum List {
     //     Cons(i32, RefCell<Rc<List>>),

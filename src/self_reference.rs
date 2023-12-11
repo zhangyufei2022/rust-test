@@ -1,69 +1,66 @@
-use std::{marker::PhantomPinned, pin::Pin};
+#[cfg(test)]
 
-#[derive(Debug)]
-struct SelfRef {
-    value: String,
-    // 使用裸指针，而不是引用，因此不用受引用规则和生命周期的限制，但是取值的时候需要使用unsafe代码
-    pointer: *mut String,
-}
+mod tests {
+    use std::{marker::PhantomPinned, pin::Pin};
 
-impl SelfRef {
-    fn new(value: String) -> Self {
-        SelfRef {
-            value: value,
-            pointer: std::ptr::null_mut(),
+    #[derive(Debug)]
+    struct SelfRef {
+        value: String,
+        // 使用裸指针，而不是引用，因此不用受引用规则和生命周期的限制，但是取值的时候需要使用unsafe代码
+        pointer: *mut String,
+    }
+
+    impl SelfRef {
+        fn new(value: String) -> Self {
+            SelfRef {
+                value: value,
+                pointer: std::ptr::null_mut(),
+            }
+        }
+
+        fn init(&mut self) {
+            self.pointer = &mut self.value;
+        }
+
+        fn value(&self) -> &str {
+            &self.value
+        }
+
+        fn pointer(&self) -> &String {
+            assert!(!self.pointer.is_null(), "Should call init() first!");
+            unsafe { &*self.pointer }
         }
     }
 
-    fn init(&mut self) {
-        self.pointer = &mut self.value;
+    #[derive(Debug)]
+    struct SelfRef2 {
+        value: String,
+        pointer: *const String,
+        _marker: PhantomPinned, // 这个标记可以让类型自动实现 !UnPin 特征
     }
 
-    fn value(&self) -> &str {
-        &self.value
+    impl SelfRef2 {
+        fn new(value: &str) -> Pin<Box<Self>> {
+            let a = SelfRef2 {
+                value: value.to_string(),
+                pointer: std::ptr::null(),
+                _marker: PhantomPinned,
+            };
+
+            let mut boxed = Box::pin(a);
+            let self_ptr: *const String = &boxed.value;
+            unsafe { boxed.as_mut().get_unchecked_mut().pointer = self_ptr };
+            boxed
+        }
+
+        fn value(self: Pin<&Self>) -> &str {
+            &self.get_ref().value
+        }
+
+        fn pointer(self: Pin<&Self>) -> &String {
+            unsafe { &*(self.get_ref().pointer) }
+        }
     }
-
-    fn pointer(&self) -> &String {
-        assert!(!self.pointer.is_null(), "Should call init() first!");
-        unsafe { &*self.pointer }
-    }
-}
-
-#[derive(Debug)]
-struct SelfRef2 {
-    value: String,
-    pointer: *const String,
-    _marker: PhantomPinned, // 这个标记可以让类型自动实现 !UnPin 特征
-}
-
-impl SelfRef2 {
-    fn new(value: &str) -> Pin<Box<Self>> {
-        let a = SelfRef2 {
-            value: value.to_string(),
-            pointer: std::ptr::null(),
-            _marker: PhantomPinned,
-        };
-
-        let mut boxed = Box::pin(a);
-        let self_ptr: *const String = &boxed.value;
-        unsafe { boxed.as_mut().get_unchecked_mut().pointer = self_ptr };
-        boxed
-    }
-
-    fn value(self: Pin<&Self>) -> &str {
-        &self.get_ref().value
-    }
-
-    fn pointer(self: Pin<&Self>) -> &String {
-        unsafe { &*(self.get_ref().pointer) }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use std::ptr::NonNull;
-
-    use super::*;
 
     #[test]
     fn test_self_ref() {
