@@ -2,6 +2,7 @@ pub mod async_await;
 pub mod basic_types;
 pub mod compound_types;
 pub mod flow_control;
+pub mod format;
 pub mod generics;
 pub mod hashmap;
 pub mod leetcode;
