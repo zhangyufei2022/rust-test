@@ -1,0 +1,3 @@
+# Since Cargo 1.56
+[env]
+IGNORE_CASE = { value = "1", force = true } # force 意味着该变量可以覆盖现有的环境变量。
