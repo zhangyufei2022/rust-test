@@ -8,19 +8,24 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn build_config(args: &[String]) -> Result<Config, &'static str> {
-        if args.len() < 3 {
-            return Err("Not enough arguments.");
-        }
+    // 使用迭代器作为参数
+    pub fn build_config(mut args: impl Iterator<Item = String>) -> Result<Config, &'static str> {
+        args.next();
 
-        let key = args[1].clone();
-        let file = args[2].clone();
+        let key = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't get a query string"),
+        };
+        let file = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't get a file path"),
+        };
 
         // 环境变量 IGNORE_CASE=1 时，忽略大小写；
         // 该环境变量不存在时，检查命令行参数
         let ignore_case = match env::var("IGNORE_CASE") {
             Ok(env) => env.eq("1"),
-            Err(_) => match args.get(3) {
+            Err(_) => match args.next() {
                 Some(arg) => arg.eq("ignore_case"),
                 None => false,
             },
@@ -49,28 +54,14 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 }
 
 pub fn search<'a>(key: &str, contents: &'a str) -> Vec<&'a str> {
-    let mut results = vec![];
-
-    for line in contents.lines() {
-        if line.contains(&key) {
-            results.push(line);
-        }
-    }
-
-    results
+    contents.lines().filter(|line| line.contains(key)).collect()
 }
 
 pub fn search_case_insensitive<'a>(key: &str, contents: &'a str) -> Vec<&'a str> {
-    let mut results = vec![];
-    let key = key.to_lowercase();
-
-    for line in contents.lines() {
-        if line.to_lowercase().contains(&key) {
-            results.push(line);
-        }
-    }
-
-    results
+    contents
+        .lines()
+        .filter(|line| line.to_lowercase().contains(&key.to_lowercase()))
+        .collect()
 }
 
 #[cfg(test)]
