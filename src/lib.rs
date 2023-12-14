@@ -17,6 +17,7 @@ pub mod result_panic;
 pub mod self_reference;
 pub mod thread;
 pub mod traits;
+pub mod type_conversion;
 pub mod var;
 pub mod vec;
 pub mod weak_and_circle_reference;
