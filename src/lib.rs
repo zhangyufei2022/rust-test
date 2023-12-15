@@ -16,6 +16,7 @@ pub mod ownership;
 pub mod pattern_match;
 pub mod result_panic;
 pub mod self_reference;
+pub mod smart_pointers;
 pub mod thread;
 pub mod traits;
 pub mod type_conversion;
