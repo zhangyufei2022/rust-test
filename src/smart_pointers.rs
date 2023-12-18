@@ -171,4 +171,62 @@ mod tests {
             handle.join().unwrap();
         }
     }
+
+    use std::cell::{Cell, RefCell};
+
+    // 假设这个是定义在外部库中的特征
+    pub trait Messenger {
+        fn send(&self, msg: String);
+    }
+
+    // 我们的代码中的数据结构和实现
+    struct MsgQueue {
+        // msg_cache: Vec<String>, 如果是这样的话，下面的 send 方法中，self.msg_cache.push(msg) 会报错，因为self是不可变引用
+        msg_cache: RefCell<Vec<String>>,
+    }
+
+    impl Messenger for MsgQueue {
+        fn send(&self, msg: String) {
+            self.msg_cache.borrow_mut().push(msg)
+        }
+    }
+
+    #[test]
+    fn test_cell_and_refcell() {
+        // Cell 和 RefCell 用于内部可变性，简而言之，可以在拥有不可变引用的同时修改目标数据
+        // 但是Cell只能用于值实现了Copy特征的场景
+        let x = Cell::new(1);
+        let y = &x;
+        let z = &x;
+        x.set(2);
+        y.set(3);
+        z.set(4);
+        assert_eq!(x.get(), 4);
+        assert_eq!(y.get(), 4);
+
+        // RefCell用于引用
+        let queue = MsgQueue {
+            msg_cache: RefCell::new(Vec::new()),
+        };
+        queue.send(String::from("rust"));
+
+        // Rc + RefCell，实现一个数据有多个所有者的同时还能改变
+        let s = Rc::new(RefCell::new(String::from("hello, ")));
+        let s1 = s.clone();
+        let s2 = s.clone();
+        s2.borrow_mut().push_str("world");
+        assert_eq!(s1.take(), String::from("hello, world"));
+        assert_eq!(s1.take(), s2.take());
+        assert_eq!(s1.take(), s.take());
+        assert_eq!(Rc::strong_count(&s), 3);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_refcell_panic() {
+        // RefCell 用于引用，实现编译器可变引用和不可变引用共存，注意只是编译期，如果运行期发现违反借用规则，仍然会报错
+        let s = RefCell::new(5);
+        let _s1 = s.borrow();
+        let _s2 = s.borrow_mut();
+    }
 }
