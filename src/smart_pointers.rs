@@ -137,4 +137,38 @@ mod tests {
         // 当 T: Deref<Target=U>，可以将 &mut T 转换成 &U
         display(&s);
     }
+
+    use std::rc::Rc;
+    use std::sync::Arc;
+    use std::thread;
+
+    #[test]
+    fn test_rc_and_arc() {
+        // 创建一个智能指针：引用计数，同时计数+1，此时获取引用计数的关联函数 Rc::strong_count 返回的值将是 1。
+        let a = Rc::new(String::from("test ref counting"));
+        assert_eq!(Rc::strong_count(&a), 1);
+        // 这里的clone方法只是拷贝指针并增加引用计数，而不是拷贝数据
+        let b = Rc::clone(&a);
+        // a b引用同一份数据，所以计数相同
+        assert_eq!(Rc::strong_count(&a), 2);
+        assert_eq!(Rc::strong_count(&b), 2);
+        {
+            let c = Rc::clone(&a);
+            assert_eq!(Rc::strong_count(&c), 3);
+        }
+        // c 超出作用域后引用计数会减1，这是因为 Rc<T> 实现了 Drop 特征
+        assert_eq!(Rc::strong_count(&a), 2);
+
+        // Rc<T>只能用于单线程，Arc<T>用于多线程场景，两者都是不可变引用。
+        let a = Arc::new(String::from("hello world"));
+        for _ in 0..5 {
+            let s = Arc::clone(&a);
+            let handle = thread::spawn(move || {
+                println!("{}", Arc::strong_count(&s));
+            });
+
+            // 等待新线程结束
+            handle.join().unwrap();
+        }
+    }
 }
