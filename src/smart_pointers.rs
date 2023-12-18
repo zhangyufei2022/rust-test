@@ -1,6 +1,8 @@
 #[cfg(test)]
 
 mod tests {
+    use std::ops::{Deref, DerefMut};
+
     #[test]
     fn test_box() {
         // 1. 使用 Box<T> 将数据存储在堆上；没有Box的情况下，i32肯定是存储在栈上的
@@ -75,5 +77,64 @@ mod tests {
         for e in elems {
             e.draw()
         }
+    }
+
+    // 实现自己的智能指针
+    struct MyBox<T>(T);
+
+    impl<T> MyBox<T> {
+        fn new(t: T) -> MyBox<T> {
+            MyBox(t)
+        }
+    }
+
+    // 为智能指针实现 Deref 特征
+    impl<T> Deref for MyBox<T> {
+        type Target = T;
+
+        // deref 返回的是一个常规引用，可以被 * 进行解引用
+        fn deref(&self) -> &Self::Target {
+            &self.0
+        }
+    }
+
+    fn display(s: &str) {
+        println!("{}", s);
+    }
+
+    impl<T> DerefMut for MyBox<T> {
+        fn deref_mut(&mut self) -> &mut Self::Target {
+            &mut self.0
+        }
+    }
+
+    fn display2(s: &mut String) {
+        s.push_str("world");
+        println!("{s}");
+    }
+
+    #[test]
+    fn test_deref() {
+        let x = MyBox::new(5);
+        assert_eq!(*x, 5);
+
+        // Deref 可以支持连续的隐式转换，下面代码调用display时发生了两次自动解引用
+        // 当 T: Deref<Target=U>，可以将 &T 转换成 &U
+        let s = MyBox::new(String::from("hello world"));
+        display(&s);
+
+        // 赋值操作需要手动解引用
+        let s1: &str = &s;
+        assert_eq!(s1, "hello world");
+        // 方法调用会自动解引用，这里MyBox并没有to_string方法，s.to_string()实际上是对MyBox应用了Deref后调用的String的方法
+        let s2: String = s.to_string();
+        assert_eq!(s2, String::from("hello world"));
+
+        // 当 T: DerefMut<Target=U>，可以将 &mut T 转换成 &mut U
+        let mut s = MyBox::new(String::from("hello, "));
+        display2(&mut s);
+
+        // 当 T: Deref<Target=U>，可以将 &mut T 转换成 &U
+        display(&s);
     }
 }
