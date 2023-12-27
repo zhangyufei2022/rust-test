@@ -31,6 +31,14 @@ impl<T> List<T> {
             None => None,
         }
     }
+
+    pub fn peek(&self) -> Option<&T> {
+        self.head.as_ref().map(|node| &node.value)
+    }
+
+    pub fn peek_mut(&mut self) -> Option<&mut T> {
+        self.head.as_mut().map(|node| &mut node.value)
+    }
 }
 
 impl<T> Drop for List<T> {
@@ -73,5 +81,23 @@ mod test {
         }
         // 如果不重写List的Drop，则会导致 STATUS_STACK_OVERFLOW，因为链表的drop是递归的
         drop(list);
+    }
+
+    #[test]
+    fn peek() {
+        let mut list = List::new();
+        assert_eq!(list.peek(), None);
+        assert_eq!(list.peek_mut(), None);
+        list.push(1);
+        list.push(2);
+        list.push(3);
+
+        assert_eq!(list.peek(), Some(&3));
+        assert_eq!(list.peek_mut(), Some(&mut 3));
+
+        list.peek_mut().map(|value| *value = 42);
+
+        assert_eq!(list.peek(), Some(&42));
+        assert_eq!(list.pop(), Some(42));
     }
 }
