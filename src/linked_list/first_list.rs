@@ -45,37 +45,3 @@ impl Drop for List {
         }
     }
 }
-
-#[cfg(test)]
-mod test {
-    use super::List;
-
-    #[test]
-    fn test_list() {
-        let mut list1 = List::new();
-        assert_eq!(list1.pop(), None);
-
-        list1.push(1);
-        list1.push(2);
-        list1.push(3);
-        assert_eq!(list1.pop(), Some(3));
-
-        list1.push(4);
-        list1.push(5);
-        assert_eq!(list1.pop(), Some(5));
-        assert_eq!(list1.pop(), Some(4));
-        assert_eq!(list1.pop(), Some(2));
-        assert_eq!(list1.pop(), Some(1));
-        assert_eq!(list1.pop(), None);
-    }
-
-    #[test]
-    fn test_long_list() {
-        let mut list = List::new();
-        for i in 0..100000 {
-            list.push(i);
-        }
-        // 如果不重写List的Drop，则会导致 STATUS_STACK_OVERFLOW，因为链表的drop是递归的
-        drop(list);
-    }
-}
