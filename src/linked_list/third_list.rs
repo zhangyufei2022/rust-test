@@ -40,9 +40,9 @@ impl<T> List<T> {
         self.head.as_ref().map(|node| &node.value)
     }
 
-    pub fn into_iter(self) -> IntoIter<T> {
-        IntoIter(self)
-    }
+    // pub fn into_iter(self) -> IntoIter<T> {
+    //     IntoIter(self)
+    // }
 
     pub fn iter(&self) -> Iter<T> {
         Iter {
@@ -59,21 +59,25 @@ impl<T> List<T> {
     }
 }
 
-pub struct IntoIter<T>(List<T>);
+// // Rc（引用计数）类型是用于共享所有权的智能指针，因此不直接支持所有权转移
+// pub struct IntoIter<T>(List<T>);
 
-impl<T> Iterator for IntoIter<T> {
-    type Item = T;
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.head.take().and_then(|rc_node| {
-            if let Ok(mut node) = Rc::try_unwrap(rc_node) {
-                self.0.head = node.next.take();
-                Some(node.value)
-            } else {
-                None
-            }
-        })
-    }
-}
+// impl<T> Iterator for IntoIter<T> {
+//     type Item = T;
+//     fn next(&mut self) -> Option<Self::Item> {
+//         self.0.head.take().and_then(|rc_node| {
+//             if Rc::strong_count(&rc_node) > 0 {
+//                 // let mut node = Rc::unwrap_or_clone(rc_node);
+//                 // self.0.head = node.next.take();
+//                 // Some(node.value)
+//                 self.0.head = rc_node.next.take();
+//                 Some(rc_node.value)
+//             } else {
+//                 None
+//             }
+//         })
+//     }
+// }
 
 pub struct Iter<'a, T> {
     next: Option<&'a Node<T>>,
@@ -107,6 +111,19 @@ impl<'a, T> Iterator for IterMut<'a, T> {
     }
 }
 
+impl<T> Drop for List<T> {
+    fn drop(&mut self) {
+        let mut head = self.head.take();
+        while let Some(node) = head {
+            if let Ok(mut node) = Rc::try_unwrap(node) {
+                head = node.next.take();
+            } else {
+                break;
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::List;
@@ -132,7 +149,7 @@ mod tests {
         assert_eq!(list.peek(), None);
     }
 
-    // todo: into_iter的写法有问题
+    // // todo: into_iter的写法有问题
     // #[test]
     // fn test_into_iter() {
     //     let mut list = List::new();
@@ -146,14 +163,14 @@ mod tests {
     //     assert_eq!(iter.next(), Some(4));
     //     assert_eq!(iter.next(), None);
 
-    // let mut iter = list2.into_iter();
-    // assert_eq!(iter.next(), Some(9));
-    // assert_eq!(iter.next(), Some(8));
-    // assert_eq!(iter.next(), Some(7));
-    // assert_eq!(iter.next(), Some(6));
-    // assert_eq!(iter.next(), Some(5));
-    // assert_eq!(iter.next(), Some(4));
-    // assert_eq!(iter.next(), None);
+    //     let mut iter = list2.into_iter();
+    //     assert_eq!(iter.next(), Some(9));
+    //     assert_eq!(iter.next(), Some(8));
+    //     assert_eq!(iter.next(), Some(7));
+    //     assert_eq!(iter.next(), Some(6));
+    //     assert_eq!(iter.next(), Some(5));
+    //     assert_eq!(iter.next(), Some(4));
+    //     assert_eq!(iter.next(), None);
     // }
 
     #[test]
