@@ -51,6 +51,21 @@ impl<T> List<T> {
         }
     }
 
+    pub fn push_back(&mut self, value: T) {
+        let new_node = Node::new(value);
+        match self.tail.take() {
+            Some(old_tail) => {
+                old_tail.borrow_mut().next = Some(new_node.clone());
+                new_node.borrow_mut().prev = Some(old_tail);
+                self.tail = Some(new_node);
+            }
+            None => {
+                self.head = Some(new_node.clone());
+                self.tail = Some(new_node);
+            }
+        }
+    }
+
     pub fn pop_front(&mut self) -> Option<T> {
         self.head.take().map(|old_head| {
             match old_head.borrow_mut().next.take() {
@@ -67,6 +82,21 @@ impl<T> List<T> {
             }
             // into_inner() 消费掉 RefCell 并返回内部的值
             Rc::try_unwrap(old_head).ok().unwrap().into_inner().value
+        })
+    }
+
+    pub fn pop_back(&mut self) -> Option<T> {
+        self.tail.take().map(|old_tail| {
+            match old_tail.borrow_mut().prev.take() {
+                Some(new_tail) => {
+                    new_tail.borrow_mut().next.take();
+                    self.tail = Some(new_tail);
+                }
+                None => {
+                    self.head.take();
+                }
+            }
+            Rc::try_unwrap(old_tail).ok().unwrap().into_inner().value
         })
     }
 }
@@ -96,5 +126,13 @@ mod tests {
         assert_eq!(list.pop_front(), Some(1));
         assert_eq!(list.pop_front(), None);
         assert_eq!(list.pop_front(), None);
+
+        list.push_back(4);
+        list.push_front(3);
+        list.push_back(5);
+        assert_eq!(list.pop_back(), Some(5));
+        assert_eq!(list.pop_front(), Some(3));
+        assert_eq!(list.pop_back(), Some(4));
+        assert_eq!(list.pop_back(), None);
     }
 }
