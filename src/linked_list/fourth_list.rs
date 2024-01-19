@@ -1,5 +1,8 @@
 /// 双向链表
-use std::{cell::RefCell, rc::Rc};
+use std::{
+    cell::{Ref, RefCell, RefMut},
+    rc::Rc,
+};
 
 type Link<T> = Option<Rc<RefCell<Node<T>>>>;
 
@@ -99,6 +102,38 @@ impl<T> List<T> {
             Rc::try_unwrap(old_tail).ok().unwrap().into_inner().value
         })
     }
+
+    pub fn peek_front(&self) -> Option<Ref<T>> {
+        // map<U, F>(orig: Ref<'b, T>, f: F) -> Ref<'b, U>
+        // where F: FnOnce(&T) -> &U,
+        // U: ?Sized
+        // 就像在 Result 和 Option 上使用 map 一样，我们还能在 Ref 上使用 map:
+        self.head
+            .as_ref()
+            .map(|node| Ref::map(node.borrow(), |node| &node.value))
+    }
+
+    pub fn peek_back(&self) -> Option<Ref<T>> {
+        self.tail
+            .as_ref()
+            .map(|node| Ref::map(node.borrow(), |node| &node.value))
+    }
+
+    pub fn peek_front_mut(&mut self) -> Option<RefMut<T>> {
+        // map<U, F>(orig: Ref<'b, T>, f: F) -> Ref<'b, U>
+        // where F: FnOnce(&T) -> &U,
+        // U: ?Sized
+        // 就像在 Result 和 Option 上使用 map 一样，我们还能在 Ref 上使用 map:
+        self.head
+            .as_ref()
+            .map(|node| RefMut::map(node.borrow_mut(), |node| &mut node.value))
+    }
+
+    pub fn peek_back_mut(&mut self) -> Option<RefMut<T>> {
+        self.tail
+            .as_ref()
+            .map(|node| RefMut::map(node.borrow_mut(), |node| &mut node.value))
+    }
 }
 
 // 不实现Drop的情况下，默认的drop只是每次将引用计数减1，若存在循环引用则可能出现引用计数不能清零的情况
@@ -134,5 +169,27 @@ mod tests {
         assert_eq!(list.pop_front(), Some(3));
         assert_eq!(list.pop_back(), Some(4));
         assert_eq!(list.pop_back(), None);
+    }
+
+    #[test]
+    fn test_peek() {
+        let mut list = List::new();
+        assert!(list.peek_front().is_none());
+        assert!(list.peek_back().is_none());
+        assert!(list.peek_front_mut().is_none());
+        assert!(list.peek_back_mut().is_none());
+
+        list.push_front(1);
+        list.push_front(2);
+
+        // 需要注意的是 Ref 不能被直接比较，因此我们需要先利用 Deref 解引用出其中的值，再进行比较。
+        // assert_eq!(*list.peek_front().unwrap(), 2);   // 两种比较方式都可以
+        assert_eq!(&*list.peek_front().unwrap(), &2);
+        assert_eq!(&*list.peek_back().unwrap(), &1);
+        assert_eq!(&mut *list.peek_front_mut().unwrap(), &mut 2);
+        assert_eq!(&mut *list.peek_back_mut().unwrap(), &mut 1);
+
+        *list.peek_front_mut().unwrap() = 3;
+        assert_eq!(list.pop_front(), Some(3));
     }
 }
