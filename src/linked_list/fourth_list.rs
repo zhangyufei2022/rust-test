@@ -134,6 +134,26 @@ impl<T> List<T> {
             .as_ref()
             .map(|node| RefMut::map(node.borrow_mut(), |node| &mut node.value))
     }
+
+    pub fn into_iter(self) -> IntoIter<T> {
+        IntoIter(self)
+    }
+}
+
+pub struct IntoIter<T>(List<T>);
+
+impl<T> Iterator for IntoIter<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.pop_front()
+    }
+}
+
+impl<T> DoubleEndedIterator for IntoIter<T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.0.pop_back()
+    }
 }
 
 // 不实现Drop的情况下，默认的drop只是每次将引用计数减1，若存在循环引用则可能出现引用计数不能清零的情况
@@ -191,5 +211,38 @@ mod tests {
 
         *list.peek_front_mut().unwrap() = 3;
         assert_eq!(list.pop_front(), Some(3));
+    }
+
+    #[test]
+    fn test_into_iter() {
+        let mut list = List::new();
+        list.push_front(1);
+        list.push_front(2);
+
+        let mut iter = list.into_iter();
+        assert_eq!(iter.next(), Some(2));
+        assert_eq!(iter.next(), Some(1));
+        assert_eq!(iter.next(), None);
+
+        let mut list = List::new();
+        list.push_front(1);
+        list.push_front(2);
+
+        let mut iter = list.into_iter();
+        assert_eq!(iter.next_back(), Some(1));
+        assert_eq!(iter.next_back(), Some(2));
+        assert_eq!(iter.next_back(), None);
+
+        let mut list = List::new();
+        list.push_front(1);
+        list.push_front(2);
+        list.push_front(3);
+
+        let mut iter = list.into_iter();
+        assert_eq!(iter.next(), Some(3));
+        assert_eq!(iter.next_back(), Some(1));
+        assert_eq!(iter.next(), Some(2));
+        assert_eq!(iter.next_back(), None);
+        assert_eq!(iter.next(), None);
     }
 }
